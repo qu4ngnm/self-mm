@@ -4,6 +4,9 @@ import numpy as np
 
 from tqdm import tqdm
 
+# load tập dữ liệu đã chọn chứa các audio và video, đồng thời tính toán độ dài của từng mẫu theo số frames (đối với video) 
+# hoặc số lượng audio. Sau đó, độ dài được thêm vào tập dữ liệu và tập dữ liệu cập nhật được chọn lại.
+
 def get_lengths(mode, feature_name):
     fd = data[mode][feature_name]
     max_len = fd.shape[1]

@@ -11,6 +11,20 @@ __all__ = ['MMDataLoader']
 
 logger = logging.getLogger('MSA')
 
+
+# Hàm này defines một class MMdataset sử dụng modile `torch.utils.data.Dataset` để load multimodal dataset. Nó load multimodal data từ file được chọn và return một
+# dictionary với key như sau:
+# 'raw_text': Raw text data
+# 'text': Text data
+# 'audio': Audio data
+# 'vision': Vision data
+# 'index': Index of the sample in the dataset
+# 'id': ID of the sample in the dataset
+# 'labels': Dictionary of labels for each modality
+# 'audio_lengths': Lengths of the audio samples (optional)
+# 'vision_lengths': Lengths of the vision samples (optional)
+
+# Nó cũng return một dictionary của data loader cho việc train, xác thực và test sets
 class MMDataset(Dataset):
     def __init__(self, args, mode='train'):
         self.mode = mode

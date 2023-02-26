@@ -16,10 +16,11 @@ from transformers import BertTokenizer, BertModel
 from torch.utils.data import Dataset, DataLoader
 
 class MDataPreLoader(Dataset):
-    def __init__(self, args):
-        self.working_dir = args.working_dir
-        self.df = args.df
-        self.annotation_dict = {
+    # Class này để chuẩn bị và load data từ model multimodal sentiment analysis
+    def __init__(self, args): # Hàm khởi tạo
+        self.working_dir = args.working_dir # Khởi tạo directory chứa video và nơi mà lưu dữ liệu sau khi được xử lý 
+        self.df = args.df  # sử dụng module pandas tạo một pandas dataframe chứa thông tin về video clip cho mỗi trường hợp
+        self.annotation_dict = {  # là một thư viện ánh xạ các string tới các nhãn số nguyên
             "Negative": 0,
             "Neutral": 1,
             "Positive": 2
@@ -27,10 +28,10 @@ class MDataPreLoader(Dataset):
         # toolkits path
         self.openface2Path = args.openface2Path
         # bert
-        tokenizer_class = BertTokenizer
-        if args.language == 'cn':
-            self.pretrainedBertPath = 'pretrained_model/bert_cn' 
-            self.tokenizer = tokenizer_class.from_pretrained('pretrained_model/bert_cn')
+        tokenizer_class = BertTokenizer # là một BERT tokenizer được sử dụng trong tiền xử lý text input
+        if args.language == 'cn': 
+            self.pretrainedBertPath = 'pretrained_model/bert_cn'  # đường dẫn tới file pretrained BERT model với ngôn ngữ là china `cn`
+            self.tokenizer = tokenizer_class.from_pretrained('pretrained_model/bert_cn') 
         else:
             self.pretrainedBertPath = 'pretrained_model/bert_en' 
             self.tokenizer = tokenizer_class.from_pretrained('pretrained_model/bert_en', do_lower_case=True)
@@ -38,7 +39,7 @@ class MDataPreLoader(Dataset):
     def __len__(self):
         return len(self.df)
 
-    def __getVideoEmbedding(self, video_path, tmp_dir, pool_size=3):
+    def __getVideoEmbedding(self, video_path, tmp_dir, pool_size=3): # hàm này sẽ trích xuất video frames từ một file mp4 sử dụng OpenFace toolkit, nó sẽ return một array 2D (n_frames, embedding_size)
         faces_feature_dir = os.path.join(tmp_dir, 'Faces')
         os.mkdir(faces_feature_dir)
         cmd = self.openface2Path + ' -f ' + video_path + ' -out_dir ' + faces_feature_dir
@@ -58,7 +59,7 @@ class MDataPreLoader(Dataset):
                 features.append(np.array(local_features).mean(axis=0))
         return np.array(features)
 
-    def __getAudioEmbedding(self, video_path, audio_path):
+    def __getAudioEmbedding(self, video_path, audio_path): # Trích xuất audio từ một mp4 file sử dụng Librosa, nó sẽ reutrn mảng 2d của dữ liệu (seq_len và n_features)
         # use ffmpeg to extract audio
         cmd = 'ffmpeg -i ' + video_path + ' -f wav -vn ' + \
                 audio_path + ' -loglevel quiet'
@@ -73,7 +74,7 @@ class MDataPreLoader(Dataset):
 
         return np.concatenate([f0, mfcc, cqt], axis=-1)
     
-    def __getTextEmbedding(self, text):
+    def __getTextEmbedding(self, text): # Tính toán BERT đang nhúng của input text
         # directory is fine
         tokenizer = BertTokenizer.from_pretrained(self.pretrainedBertPath)
         model = BertModel.from_pretrained(self.pretrainedBertPath)
@@ -83,7 +84,7 @@ class MDataPreLoader(Dataset):
             last_hidden_states = model(input_ids)[0]  # Models outputs are now tuples
         return last_hidden_states.squeeze().numpy()
     
-    def __preTextforBert(self, text):
+    def __preTextforBert(self, text): #tiền xử lý đầu vào văn bản cho mô hình BERT bằng cách thêm mã thông báo đặc biệt, id phân đoạn và mặt nạ đầu vào. Nó trả về một mảng hình dạng 2D (seq_len, 3).
         tokens_a = self.tokenizer.tokenize(text,invertable=True)
         tokens = ["[CLS]"] + tokens_a + ["[SEP]"]
 
@@ -101,7 +102,7 @@ class MDataPreLoader(Dataset):
 
         return text_bert
 
-    def __getitem__(self, index):
+    def __getitem__(self, index): # là phương thức chính của lớp trả về dữ liệu đa phương thức của một thể hiện tại một chỉ mục nhất định. Đầu tiên, nó trích xuất các tính năng video, âm thanh và văn bản cho một video clip nhất định bằng các phương pháp được mô tả ở trên. Sau đó, nó nối các tính năng này dọc theo chiều trình tự và trả về một từ điển chứa dữ liệu đa phương thức, nhãn và thông tin liên quan khác.
         tmp_dir = os.path.join(self.working_dir, f'Processed/tmp-{index}')
         if not os.path.exists(tmp_dir):
             os.makedirs(tmp_dir)
@@ -273,3 +274,5 @@ if __name__ == "__main__":
 
     dp = MDataPre(args)
     dp.run()
+
+

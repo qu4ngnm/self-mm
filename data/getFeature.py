@@ -11,6 +11,15 @@ from tqdm import tqdm
 import torch
 from transformers import *
 
+
+# Class này để trích xuất audo, visual và văn bản được nhúng từ một dữ liệu thô sử dụng model tiền xử lý.
+# Tập lệnh sử dụng thư viện librosa để trích xuất các tính năng âm thanh và chức năng tùy chỉnh để trích xuất các tính năng hình ảnh từ tệp OpenFace .hog. 
+# Đối với nhúng văn bản, nó sử dụng mô hình BERT được đào tạo trước và mã hóa văn bản bằng cách sử dụng mã thông báo BERT.
+# Lớp getFeatures chứa các phương thức __getAudioEmbedding, __getVideoEmbedding và getTextEmbedding, lần lượt trích xuất các phần nhúng âm thanh, 
+# hình ảnh và văn bản. Phương thức __getAudioEmbedding trích xuất các tính năng âm thanh (f0, mfcc và cqt) bằng thư viện librosa. 
+# Phương thức __getVideoEmbedding trích xuất các tính năng trực quan từ tệp .hog OpenFace bằng chức năng tùy chỉnh. 
+# Phương thức getTextEmbedding trích xuất các nhúng văn bản bằng mô hình BERT được đào tạo trước. 
+# Lớp này cũng chứa phương thức __read_hog, phương thức này đọc tệp tính năng HoG được tạo bởi OpenFace.
 class getFeatures():
     def __init__(self, working_dir, openface2Path, pretrainedBertPath):
         self.data_dir = os.path.join(working_dir, 'Processed')
